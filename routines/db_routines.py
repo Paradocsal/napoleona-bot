@@ -1,10 +1,10 @@
 
 import pandas as pd
 import sqlite3
-
+import io
 
 def initialize_db():
-    connection = sqlite3.connect('C://Users/Adminn/Documents/GitHub/talent_hub_hack_tg/mch_bot/database.db')
+    connection = sqlite3.connect('C://Users/Adminn/Documents/GitHub/talent_hub_hack_tg/napoleona-bot/database.db')
     cursor = connection.cursor()
 
     cursor.execute('''
@@ -32,7 +32,7 @@ def initialize_db():
 
 
 def add_user(chat_id):
-    connection = sqlite3.connect('C://Users/Adminn/Documents/GitHub/talent_hub_hack_tg/mch_bot/database.db')
+    connection = sqlite3.connect('C://Users/Adminn/Documents/GitHub/talent_hub_hack_tg/napoleona-bot/database.db')
     cursor = connection.cursor()
 
     cursor.execute('INSERT OR IGNORE INTO users (chat_id) VALUES (?)', (chat_id,))
@@ -42,14 +42,21 @@ def add_user(chat_id):
     connection.close()
 
 
-def add_products(chat_id, products):
-    connection = sqlite3.connect('C://Users/Adminn/Documents/GitHub/talent_hub_hack_tg/mch_bot/database.db')
+def add_products(bot,chat_id, file_content,default=False):
+    connection = sqlite3.connect('C://Users/Adminn/Documents/GitHub/talent_hub_hack_tg/napoleona-bot/database.db')
     cursor = connection.cursor()
 
     cursor.execute('SELECT id FROM users WHERE chat_id = ?', (chat_id,))
     user_id = cursor.fetchone()[0]
-
-    cursor.execute('INSERT OR IGNORE INTO products (user_id, product_name) VALUES (?, ?)', (user_id, products))
+    if default:
+        df=pd.read_csv('C://Users/Adminn/Documents/GitHub/talent_hub_hack_tg/napoleona-bot/itmo_meta.csv')
+    else:
+        df = pd.read_csv(io.BytesIO(file_content))
+    
+    names=df['analogue_name']
+    bot.send_message(chat_id,names.head().to_string(index=False))
+    for name in names:
+        cursor.execute('INSERT OR IGNORE INTO products (user_id, product_name) VALUES (?, ?)', (user_id, name))
 
     connection.commit()
     cursor.close()
@@ -57,7 +64,7 @@ def add_products(chat_id, products):
 
 
 def delete_products(chat_id, products):
-    connection = sqlite3.connect('C://Users/Adminn/Documents/GitHub/talent_hub_hack_tg/mch_bot/database.db')
+    connection = sqlite3.connect('C://Users/Adminn/Documents/GitHub/talent_hub_hack_tg/napoleona-bot/database.db')
     cursor = connection.cursor()
 
     cursor.execute('SELECT id FROM users WHERE chat_id = ?', (chat_id,))
@@ -74,7 +81,7 @@ def delete_products(chat_id, products):
 
 
 def get_saved_database(chat_id):
-    connection = sqlite3.connect('C://Users/Adminn/Documents/GitHub/talent_hub_hack_tg/mch_bot/database.db')
+    connection = sqlite3.connect('C://Users/Adminn/Documents/GitHub/talent_hub_hack_tg/napoleona-bot/database.db')
     cursor = connection.cursor()
 
     cursor.execute('SELECT id FROM users WHERE chat_id = ?', (chat_id,))
@@ -91,7 +98,7 @@ def get_saved_database(chat_id):
 
 
 def is_table_empty(table_name):
-    connection = sqlite3.connect('C://Users/Adminn/Documents/GitHub/ai_gp_hack_tg_bot4/mch_bot/database.db')
+    connection = sqlite3.connect('C://Users/Adminn/Documents/GitHub/ai_gp_hack_tg_bot4/napoleona-bot/database.db')
     cursor = connection.cursor()
 
     cursor.execute(f"SELECT COUNT(*) FROM {table_name}")

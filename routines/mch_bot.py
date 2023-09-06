@@ -1,15 +1,15 @@
 import telebot
 import re
 
-# from db_routines import initialize_db, add_user, add_timeseries_source_table, delete_timeseries_source_table, \
-#     get_saved_databases
-from reports_routines import send_report,scrape_text
+from db_routines import initialize_db, add_user, add_products, \
+     get_saved_database
+from reports_routines import send_analogs,scrape_text
 
-#initialize_db()
+initialize_db()
 
 
 def get_bot_token():
-    token_file = open('C://Users/Adminn/Documents/GitHub/talent_hub_hack_tg/tokens/mch_bot_token', 'r')
+    token_file = open('C://Users/Adminn/Documents/GitHub/talent_hub_hack_tg/napoleona-bot/tokens/mch_bot_token', 'r')
     token = token_file.read()
     token_file.close()
     return token
@@ -42,7 +42,7 @@ def create_keyboard_with_commands():
 # noinspection SpellCheckingInspection
 @bot.message_handler(commands=['start'])
 def handle_start(message):
-    #add_user(message.chat.id)
+    add_user(message.chat.id)
     description = "Привет! Этот бот поможет вам работать с фотографиями ценников. ID вашего чата был записан для дальнейшей синхронизации с вашей базой наименований. Вам доступны следующие команды для взаимодействия с ботом:\n\n"
     description += "/get_text_from_image - Получить текстовое представление полезной информации с фотографии ценника.\n"
     description += "/add_database - Загрузить свою базу данных или выбрать тестовую. Это даст вам возможность сравнивать ценники с аналогами.\n\n"
@@ -80,9 +80,16 @@ def handle_add_database(message):
 # noinspection SpellCheckingInspection
 def add_database_step(message):
     if message.content_type == 'document':
-        # TO DO Реализовать запись csv в базу данных с id этого пользователя
+        
+        file_info = bot.get_file(message.document.file_id)
+        file_content = bot.download_file(file_info.file_path)
+
+        add_products(bot, message.chat.id, file_content)
+        
         bot.reply_to(message, 'Ваша база наименований была успешно сохранена',reply_markup=create_keyboard_with_commands())
     if message.content_type == 'text' and message.text == 'У меня нет базы данных':
+
+        add_products(bot, message.chat.id, None, default=True)
         bot.reply_to(message, "Теперь ваши фотографии будут сравниваться с тестовой базой данных. Вы может в любой момент добавить свою, просто вызвав функцию ещё раз.", reply_markup=create_keyboard_with_commands())
     
 
@@ -90,13 +97,17 @@ def add_database_step(message):
 # noinspection SpellCheckingInspection
 @bot.message_handler(commands=['show_analogs'])
 def handle_show_analogs(message):
-    #database = get_saved_databases(message.chat.id) # TO DO реализовать геттер для базы данных
-    #if not database:
-    #    bot.reply_to(message, 'У вас нет собственной базы наименований. Поиск аналогов будет происходить в  тестовой.', reply_markup=create_keyboard_with_commands())
-    # else:
-    #    send_analogs(bot, message.chat.id, database)
-    #
-    bot.reply_to(message, 'Аналог', reply_markup=create_keyboard_with_commands())         
+    database = get_saved_database(message.chat.id) # TO DO реализовать геттер для базы данных
+    if not database:
+        bot.reply_to(message, 'Кажется, вы не задали базу наименований. Воспользуйтесь функцией /add_database.', reply_markup=create_keyboard_with_commands())
+    else:
+        products_text = "\n".join(database)
+        bot.send_message(message.chat.id, products_text)
+        # for item in database:
+        #     bot.send_message(message.chat.id, item)
+        
+        send_analogs(bot, message.chat.id, database)
+           
     
 
 
