@@ -62,7 +62,11 @@ def handle_get_text_from_image(message):
 # noinspection SpellCheckingInspection
 def get_text_from_image_step(message):
     if message.content_type == 'photo':
-        scrape_text(bot, message.chat.id,message.document)
+        largest_photo = message.photo[-1]
+        file_info = bot.get_file(largest_photo.file_id)
+        file_content = bot.download_file(file_info.file_path)
+        text = scrape_text(file_content)
+        bot.reply_to(message,text,reply_markup=create_keyboard_with_commands())
     else:
         bot.reply_to(message, 'Кажется, ваше сообщение не является фотографией. ', reply_markup=create_keyboard_with_commands())
     
@@ -101,13 +105,39 @@ def handle_show_analogs(message):
     if not database:
         bot.reply_to(message, 'Кажется, вы не задали базу наименований. Воспользуйтесь функцией /add_database.', reply_markup=create_keyboard_with_commands())
     else:
-        products_text = "\n".join(database)
-        bot.send_message(message.chat.id, products_text)
-        # for item in database:
-        #     bot.send_message(message.chat.id, item)
+        bot.reply_to(message, 'Пожалуйста, загрузите фото ценника, аналоги которого вы хотите найти.')
+        bot.register_next_step_handler(message, show_analogs_step,database)
         
-        send_analogs(bot, message.chat.id, database)
-           
+
+
+def show_analogs_step(message,database):
+    
+        
+        if message.content_type == 'photo':
+            largest_photo = message.photo[-1]
+            file_info = bot.get_file(largest_photo.file_id)
+            file_content = bot.download_file(file_info.file_path)
+            text = scrape_text(file_content)
+
+            analogs = send_analogs(database, text)
+
+            
+            if analogs:
+                bot.reply_to(message, analogs, reply_markup=create_keyboard_with_commands())
+            else:
+                bot.reply_to(message, 'No analogs found.', reply_markup=create_keyboard_with_commands())
+        else:
+            bot.reply_to(message, 'Кажется, ваше сообщение не является фотографией. ', reply_markup=create_keyboard_with_commands())
+        
+        
+        
+        # products_text = "\n".join(database)
+        # bot.send_message(message.chat.id, products_text)
+        # # for item in database:
+        # #     bot.send_message(message.chat.id, item)
+        
+        # send_analogs(bot, message.chat.id, database)
+        
     
 
 

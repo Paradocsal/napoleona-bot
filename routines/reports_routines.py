@@ -5,13 +5,16 @@ import pandas as pd
 
 
 
-def scrape_text(bot,chat_id,image):#Скрапинг текста с фото, возможно не всего, а как-то отфильтрованный, пока просто отсылает фотку обратно
+def scrape_text(image):#Скрапинг текста с фото, возможно не всего, а как-то отфильтрованный, пока просто отсылает фотку обратно
+    image_stream = BytesIO(image)
+    #bot.send_photo(chat_id,photo=image_stream)
+    
+    return ('Текст для данной картинки:')
+    
 
-    bot.send_message(chat_id, 'Текст для данной картинки:')
-    bot.send_photo(chat_id,image)
+def send_analogs(database,text):
+    return('Аналоги')
 
-def send_analogs(bot,chat_id,database):
-    bot.send_message(chat_id, 'Аналоги')
 
 
 
