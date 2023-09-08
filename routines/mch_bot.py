@@ -3,7 +3,7 @@ import re
 
 from db_routines import initialize_db, add_user, add_products, \
      get_saved_database
-from reports_routines import send_analogs,scrape_text
+from reports_routines import send_analogs,scrape_text,scrape_text_old
 
 initialize_db()
 
@@ -45,8 +45,8 @@ def handle_start(message):
     add_user(message.chat.id)
     description = "Привет! Этот бот поможет вам работать с фотографиями ценников. ID вашего чата был записан для дальнейшей синхронизации с вашей базой наименований. Вам доступны следующие команды для взаимодействия с ботом:\n\n"
     description += "/get_text_from_image - Получить текстовое представление полезной информации с фотографии ценника.\n"
-    description += "/add_database - Загрузить свою базу данных или выбрать тестовую. Это даст вам возможность сравнивать ценники с аналогами.\n\n"
-    description += "/show_analogs - Получить информацию об аналогах товара на ценнике в базе наименований.\n"
+    description += "/add_database - Загрузить свою базу данных или выбрать тестовую. Это даст вам возможность сравнивать ценники с аналогами.\n"
+    description += "/show_analogs - Получить информацию об аналогах товара на ценнике в базе наименований.\n\n"
     
     description += "Мы работаем над увеличением нашего функционала!"
     bot.reply_to(message, description, reply_markup=create_keyboard_with_commands())
@@ -66,7 +66,10 @@ def get_text_from_image_step(message):
         file_info = bot.get_file(largest_photo.file_id)
         file_content = bot.download_file(file_info.file_path)
         text = scrape_text(file_content)
-        bot.reply_to(message,text,reply_markup=create_keyboard_with_commands())
+        if text:
+            bot.reply_to(message,text,reply_markup=create_keyboard_with_commands())
+        else:
+            bot.reply_to(message, 'На данном изображении текст не был обнаружен, попробуйте сфотографировать ценник более чётко.', reply_markup=create_keyboard_with_commands())
     else:
         bot.reply_to(message, 'Кажется, ваше сообщение не является фотографией. ', reply_markup=create_keyboard_with_commands())
     
@@ -101,7 +104,8 @@ def add_database_step(message):
 # noinspection SpellCheckingInspection
 @bot.message_handler(commands=['show_analogs'])
 def handle_show_analogs(message):
-    database = get_saved_database(message.chat.id) # TO DO реализовать геттер для базы данных
+    database = get_saved_database(message.chat.id) 
+    
     if not database:
         bot.reply_to(message, 'Кажется, вы не задали базу наименований. Воспользуйтесь функцией /add_database.', reply_markup=create_keyboard_with_commands())
     else:
@@ -119,13 +123,15 @@ def show_analogs_step(message,database):
             file_content = bot.download_file(file_info.file_path)
             text = scrape_text(file_content)
 
-            analogs = send_analogs(database, text)
-
-            
-            if analogs:
+            if text:
+                analogs = send_analogs(database, text)
+            else:
+                bot.reply_to(message, 'На данном изображении текст не был обнаружен, попробуйте сфотографировать ценник более чётко.', reply_markup=create_keyboard_with_commands())
+            print(analogs)
+            if analogs!=[]:
                 bot.reply_to(message, analogs, reply_markup=create_keyboard_with_commands())
             else:
-                bot.reply_to(message, 'No analogs found.', reply_markup=create_keyboard_with_commands())
+                bot.reply_to(message, 'Для данной изображения аналоги не были найдены.', reply_markup=create_keyboard_with_commands())
         else:
             bot.reply_to(message, 'Кажется, ваше сообщение не является фотографией. ', reply_markup=create_keyboard_with_commands())
         

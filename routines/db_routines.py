@@ -49,13 +49,13 @@ def add_products(bot,chat_id, file_content,default=False):
     cursor.execute('SELECT id FROM users WHERE chat_id = ?', (chat_id,))
     user_id = cursor.fetchone()[0]
     if default:
-        df=pd.read_csv('C://Users/Adminn/Documents/GitHub/talent_hub_hack_tg/napoleona-bot/itmo_meta.csv')
+        df=pd.read_csv('C://Users/Adminn/Documents/GitHub/talent_hub_hack_tg/napoleona-bot/itmo_meta_2.csv', delimiter=';', encoding='utf-8')['prod_name']
     else:
-        df = pd.read_csv(io.BytesIO(file_content))
+        df = pd.read_csv(io.BytesIO(file_content), delimiter=';', encoding='utf-8')['prod_name']
     
-    names=df['analogue_name']
-    bot.send_message(chat_id,names.head().to_string(index=False))
-    for name in names:
+    
+    
+    for name in df:
         cursor.execute('INSERT OR IGNORE INTO products (user_id, product_name) VALUES (?, ?)', (user_id, name))
 
     connection.commit()
